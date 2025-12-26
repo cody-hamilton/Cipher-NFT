@@ -1,110 +1,192 @@
-# FHEVM Hardhat Template
+# Cipher NFT
 
-A Hardhat-based template for developing Fully Homomorphic Encryption (FHE) enabled Solidity smart contracts using the
-FHEVM protocol by Zama.
+Cipher NFT is a free-mint NFT collection with a privacy-first marketplace. Everyone can mint exactly one NFT, list it for
+sale, and receive encrypted bids. Only the listing owner can decrypt bids using Zama FHE, accept one, and settle the
+payment.
 
-## Quick Start
+## Project Goals
 
-For detailed instructions see:
-[FHEVM Hardhat Quick Start Tutorial](https://docs.zama.ai/protocol/solidity-guides/getting-started/quick-start-tutorial)
+- Give every address a free, one-time mint to bootstrap a community collection.
+- Enable a transparent listing market while keeping bid values private.
+- Demonstrate practical, end-to-end use of FHEVM in a consumer-facing NFT flow.
+- Keep the stack minimal, auditable, and easy to run locally or on Sepolia.
 
-### Prerequisites
+## Core Features
 
-- **Node.js**: Version 20 or higher
-- **npm or yarn/pnpm**: Package manager
+- **Free Mint**: one NFT per address, no mint fee.
+- **On-chain SVG Metadata**: tokenURI is fully on-chain with a generated SVG.
+- **Listings**: owners can list NFTs with a fixed “buy now” price.
+- **Encrypted Bids**: bidders submit encrypted amounts; the seller alone can decrypt.
+- **Bid Acceptance**: seller can accept a bid and set the clear price after decryption.
+- **Escrow + Settlement**: listed NFTs are held by the market until sold or cancelled.
+- **Withdrawals**: sellers withdraw proceeds after sales or accepted bids settle.
 
-### Installation
+## Advantages
 
-1. **Install dependencies**
+- **Privacy-preserving price discovery**: bids are encrypted end-to-end.
+- **Simple user flow**: mint → list → bid → accept → settle.
+- **No backend custody**: all market logic is on-chain.
+- **Gas-efficient listing**: only essential fields are stored on-chain.
+- **Interoperable UI**: wallet-first flow with RainbowKit and Wagmi.
 
+## Problems Solved
+
+- **Bid privacy**: prevents front-running and bid sniping based on clear-text prices.
+- **Fairer negotiations**: sellers can review multiple encrypted bids without revealing them.
+- **Easy onboarding**: free mint avoids initial cost barriers.
+- **Trust minimization**: NFT escrow and payments are enforced by the contract.
+
+## Tech Stack
+
+- **Smart contracts**: Solidity `0.8.24`
+- **Framework**: Hardhat
+- **FHE**: Zama FHEVM (`@fhevm/solidity`)
+- **Frontend**: React + Vite + TypeScript
+- **Wallet + Web3**: RainbowKit + Wagmi
+- **On-chain reads**: Viem
+- **On-chain writes**: Ethers
+- **Encrypted bid relayer**: `@zama-fhe/relayer-sdk`
+
+## Architecture Overview
+
+1. **CipherNFT** mints a one-per-address NFT and serves on-chain metadata.
+2. **CipherMarket** escrows listed NFTs and records encrypted bids.
+3. **Frontend** encrypts bid amounts via the Zama relayer, submits ciphertext on-chain,
+   and allows the seller to decrypt off-chain before accepting.
+
+## Smart Contracts
+
+### `CipherNFT.sol`
+
+- One mint per address (`mint()`)
+- Tracks ownership and per-owner token lists
+- `tokenURI()` generates SVG metadata on-chain
+
+### `CipherMarket.sol`
+
+- Listing lifecycle: `createListing` → `Active` → `Sold`/`Cancelled`
+- Encrypted bids: `placeBid` stores ciphertext and allows the seller to decrypt
+- Acceptance: `acceptBid` records the clear price after off-chain decryption
+- Settlement: `settleAcceptedBid` finalizes payment and transfers the NFT
+- Proceeds: `withdrawProceeds`
+
+### `FHECounter.sol`
+
+- Minimal FHE example contract kept for reference and testing
+
+## Repository Structure
+
+```
+contracts/          # Solidity contracts
+  CipherNFT.sol
+  CipherMarket.sol
+  FHECounter.sol
+
+deploy/             # Hardhat deploy scripts
+
+tasks/              # Hardhat tasks
+
+frontend/           # React + Vite frontend (no Tailwind)
+
+test/               # Contract tests
+
+docs/               # Zama documentation references
+```
+
+## Prerequisites
+
+- **Node.js** 20+
+- **npm**
+- **Sepolia ETH** for testing real deployments
+
+## Installation
+
+```bash
+npm install
+```
+
+## Environment Configuration (Deployment Only)
+
+Create or update `.env` in the repo root:
+
+```bash
+# PRIVATE_KEY must be your deployer key (without 0x prefix)
+# Do not use mnemonics
+PRIVATE_KEY=...
+INFURA_API_KEY=...
+ETHERSCAN_API_KEY=... # optional
+```
+
+## Compile and Test
+
+```bash
+npm run compile
+npm run test
+```
+
+## Local Development
+
+1. Start a local FHEVM-ready node:
    ```bash
-   npm install
-   ```
-
-2. **Set up environment variables**
-
-   ```bash
-   npx hardhat vars set MNEMONIC
-
-   # Set your Infura API key for network access
-   npx hardhat vars set INFURA_API_KEY
-
-   # Optional: Set Etherscan API key for contract verification
-   npx hardhat vars set ETHERSCAN_API_KEY
-   ```
-
-3. **Compile and test**
-
-   ```bash
-   npm run compile
-   npm run test
-   ```
-
-4. **Deploy to local network**
-
-   ```bash
-   # Start a local FHEVM-ready node
    npx hardhat node
-   # Deploy to local network
+   ```
+2. Deploy to the local network:
+   ```bash
    npx hardhat deploy --network localhost
    ```
 
-5. **Deploy to Sepolia Testnet**
+## Deploy to Sepolia
 
+1. Run tasks and tests locally until they pass.
+2. Deploy with your private key:
    ```bash
-   # Deploy to Sepolia
    npx hardhat deploy --network sepolia
-   # Verify contract on Etherscan
+   ```
+3. (Optional) Verify:
+   ```bash
    npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
    ```
 
-6. **Test on Sepolia Testnet**
+## Frontend Usage
 
-   ```bash
-   # Once deployed, you can run a simple test on Sepolia.
-   npx hardhat test --network sepolia
-   ```
-
-## 📁 Project Structure
-
-```
-fhevm-hardhat-template/
-├── contracts/           # Smart contract source files
-│   └── FHECounter.sol   # Example FHE counter contract
-├── deploy/              # Deployment scripts
-├── tasks/               # Hardhat custom tasks
-├── test/                # Test files
-├── hardhat.config.ts    # Hardhat configuration
-└── package.json         # Dependencies and scripts
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-## 📜 Available Scripts
+Notes:
+- The frontend reads via **Viem** and writes via **Ethers**.
+- Contract ABIs are copied from `deployments/sepolia` into the frontend.
+- The frontend does not rely on environment variables or local storage.
 
-| Script             | Description              |
-| ------------------ | ------------------------ |
-| `npm run compile`  | Compile all contracts    |
-| `npm run test`     | Run all tests            |
-| `npm run coverage` | Generate coverage report |
-| `npm run lint`     | Run linting checks       |
-| `npm run clean`    | Clean build artifacts    |
+## User Flow (End-to-End)
 
-## 📚 Documentation
+1. **Mint** a Cipher NFT (one per address).
+2. **List** your NFT with a fixed price.
+3. **Receive encrypted bids** from other users.
+4. **Decrypt bids** (seller only) via Zama relayer.
+5. **Accept a bid** by posting the decrypted clear price.
+6. **Bidder settles** payment, NFT transfers to bidder.
+7. **Seller withdraws** proceeds.
 
-- [FHEVM Documentation](https://docs.zama.ai/fhevm)
-- [FHEVM Hardhat Setup Guide](https://docs.zama.ai/protocol/solidity-guides/getting-started/setup)
-- [FHEVM Testing Guide](https://docs.zama.ai/protocol/solidity-guides/development-guide/hardhat/write_test)
-- [FHEVM Hardhat Plugin](https://docs.zama.ai/protocol/solidity-guides/development-guide/hardhat)
+## Design Notes and Limitations
 
-## 📄 License
+- Encrypted bid values are stored on-chain, but the decrypted clear price is provided
+  by the seller when accepting a bid.
+- The contract does not validate the clear price against the ciphertext.
+- Bids are not escrowed; the accepted bidder pays at settlement time.
 
-This project is licensed under the BSD-3-Clause-Clear License. See the [LICENSE](LICENSE) file for details.
+## Future Roadmap
 
-## 🆘 Support
+- **Bid verification**: cryptographic checks that the accepted clear price matches the ciphertext.
+- **Batch decryption UX**: seller-side tools for reviewing multiple bids quickly.
+- **Royalties**: optional creator royalties and secondary sale fees.
+- **Listing enhancements**: timed auctions, reserve prices, and partial fills.
+- **Indexing**: lightweight indexing for faster listing and bid discovery.
+- **Metadata upgrades**: richer on-chain SVG traits and trait-based filtering.
+- **Marketplace analytics**: privacy-aware metrics for sellers and buyers.
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/zama-ai/fhevm/issues)
-- **Documentation**: [FHEVM Docs](https://docs.zama.ai)
-- **Community**: [Zama Discord](https://discord.gg/zama)
+## License
 
----
-
-**Built with ❤️ by the Zama team**
+BSD-3-Clause-Clear. See `LICENSE`.
