@@ -1,0 +1,55 @@
+.app-shell {
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+.app-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.app-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  text-align: left;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #111827;
+}
+
+.app-subtitle {
+  margin: 0.5rem 0 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.app-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 9999px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: #374151;
+}
+
+.tab.active {
+  border-color: #4f46e5;
+  color: #312e81;
+  background: #eef2ff;
+}
+
